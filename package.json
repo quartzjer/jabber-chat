@@ -1,0 +1,24 @@
+{
+  "name": "jabber-chat",
+  "version": "0.0.0",
+  "description": "Jabber Chat implemented in javascript (node/browserify)",
+  "main": "index.js",
+  "dependencies": {
+    "telehash":"0.2.x"
+  },
+  "scripts": {
+    "browserify": "browserify test.js -o bundle.js"
+  },
+  "keywords": [
+    "jabber",
+    "telehash",
+    "chat",
+    "p2p"
+  ],
+  "author": {
+    "name": "Jeremie Miller",
+    "email": "jeremie@jabber.org",
+    "url": "http://jeremie.com/"
+  },
+  "license": "MIT"
+}
