@@ -9,66 +9,74 @@ exports.init = function(args, cb)
   return selfDefault;
 }
 
-// convenience
+// convenience wrappers
 exports.chat = function(arg)
 {
   if(!selfDefault) return false;
   return selfDefault.chat(arg);
 }
-
-// create a new join profile message
-exports.join = function(msg)
+exports.setJoin = function(join)
 {
-  if(!msg) msg = {};
-  if(!msg.js) msg.js = {};
-  msg.js.type = "join";
-  msg.js.at = Math.floor(Date.now()/1000);
-  var join = {message:msg};
-  var secret = crypto.randomBytes(16);
-  join.seq = 1000;
-  join.stamp = function(m)
-  {
-    var id = secret;
-    for(var i = 0; i < join.seq; i++) id = crypto.createHash("md5").update(id).digest();
-    id = id.toString("hex")+","+join.seq;
-    join.seq--;
-    if(m) m.js.id = id;
-    return id;
-  }
-  join.id = join.stamp(msg);
-  return join;
+  if(!selfDefault) return false;
+  return selfDefault.setJoin(join);
 }
+
 
 var chatTypes = ["private","public","open","closed"];
 
-function rHash(chat)
+function blankChat(self, type, join)
 {
-  var rollup = new Buffer(0);
-  Object.keys(chat.roster).sort().forEach(function(id){
-    rollup = crypto.createHash("md5").update(Buffer.concat([rollup,new Buffer(id+chat.roster[id])])).digest();
-  })
-  chat.rosterHash = rollup.toString("hex");
-}
+  console.log("BLANK",type,join)
+  var chat = this;
+  chat.type = type;
+  chat.joined = join;
+  chat.joined.js.at = Math.floor(Date.now()/1000);
+  var secret = crypto.randomBytes(16);
+  chat.seq = 1000;
 
-function blankChat(self, type)
-{
-  this.type = type;
-  this.log = {};
-  this.connected = {};
-  this.roster = {};
-  this.add = function(hashname){
-    if(!this.roster[hashname]) this.roster[hashname] = "invited";
-    rHash(this);
-  }
   // app-defined event callbacks
-  this.receive = function(){};
-  this.join = function(){};
-  this.send = function(message)
+  chat.receive = function(){};
+  chat.join = function(){};
+
+  function stamp()
   {
-    // store in messages and log
-    // walk roster, ping any connected
+    var id = secret;
+    for(var i = 0; i < chat.seq; i++) id = crypto.createHash("md5").update(id).digest();
+    id = id.toString("hex")+","+chat.seq;
+    chat.seq--;
+    return id;
   }
-  this.joining = function(from,join,cbJoined)
+
+  chat.log = {};
+  chat.connected = {};
+  chat.roster = {};
+
+  function roster()
+  {
+    var rollup = new Buffer(0);
+    Object.keys(chat.roster).sort().forEach(function(id){
+      rollup = crypto.createHash("md5").update(Buffer.concat([rollup,new Buffer(id+chat.roster[id])])).digest();
+    })
+    chat.rosterHash = rollup.toString("hex");
+  }
+
+  chat.add = function(hashname){
+    if(!chat.roster[hashname]) chat.roster[hashname] = "invited";
+    roster();
+  }
+
+  chat.send = function(msg)
+  {
+    msg.js.id = stamp();
+    chat.log[msg.js.id] = chat.last = msg;
+
+    // deliver to anyone connected
+    Object.keys(chat.connected).forEach(function(to){
+      chat.connected[to].message(msg);
+    });
+  }
+
+  chat.joining = function(from,join,cbJoined)
   {
     // check type, check allowed
     // check if it's in the roster, add/update if not
@@ -76,26 +84,28 @@ function blankChat(self, type)
     if(chat.roster[packet.js.from] == "invited" && msg.js.type == "join")
     {
       chat.roster[packet.js.from] = msg.js.id;
-      rHash(chat);
-      chat.join
+      roster();
     }
     cbJoined();
   }
-  this.token = function()
+
+  chat.token = function()
   {
-    // return self.token(function(from){ this.add(), open chat to them })
+    // return self.token(function(from){ chat.add(), open chat to them })
   }
-  return this;
+
+  // stamp and log the join message
+  chat.send(chat.joined);
+  chat.roster[self.hashname] = chat.joined.js.id;
+
+  return chat;
 }
 
 function newChat(self, type, join)
 {
-  var chat = new blankChat(type);
-  chat.id = self.randomHEX(32);
+  var chat = new blankChat(self,type,join);
+  chat.id = self.randomHEX(16);
   chat.uri = "jabber:"+self.hashname+"/"+type+"/"+chat.id;
-  chat.join = join;
-  chat.log[join.id] = chat.last = join.message;
-  chat.roster[self.hashname] = join.id;
   return chat;
 }
 
@@ -119,13 +129,23 @@ exports.install = function(self)
 {
   var chats = {};
 
+  // base message for joins
+  var join = {js:{}};
+  self.setJoin = function(msg)
+  {
+    if(!msg) return;
+    if(!msg.js) msg.js = {};
+    msg.js.type = "join";
+    join = msg;
+  }
+
   self.chat = function(arg)
   {
-    if(chatTypes.indexOf(arg) >= 0) return newChat(self,arg);
+    if(chatTypes.indexOf(arg) >= 0) return newChat(self,arg,join);
     var uri = self.uriparse(arg);
-    if(uri.protocol == "jabber:") return joinChat(self,uri);
-    if(uri.protocol == "chat:") return joinToken(self,arg);
-    return false;    
+    if(uri.protocol == "jabber:") return joinChat(self,uri,join);
+    if(uri.protocol == "chat:") return joinToken(self,arg,join);
+    return false;
   }
 
   self.rels["chat"] = function(err, packet, chan, cbChat)

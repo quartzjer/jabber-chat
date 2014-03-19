@@ -1,11 +1,9 @@
 var path = require("path");
-var th = require("telehash");
-//th.debug(console.log);
-th.init({id:path.resolve("token.json"),seeds:path.resolve("seeds.json")},function(err,self){
+var jchat = require("./index.js");
+var id = process.argv[2]||process.exit(1);
+jchat.init({id:path.resolve(id+".json"),seeds:path.resolve("seeds.json")},function(err){
   if(err) return console.log(err);
-  require("./index.js").install(self);
-  self.dispense(process.argv[2],function(err,from){
-    if(err) return console.log("error dispensing",err);
-    console.log("dispensed from",from.hashname);
-  });
-})
+  jchat.setJoin({js:{text:id}});
+  var chat = jchat.chat("open");
+  console.log(chat.uri,chat);
+});
