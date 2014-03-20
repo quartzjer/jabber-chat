@@ -37,6 +37,7 @@ function blankChat(self, type, join)
   // app-defined event callbacks
   chat.receive = function(){};
   chat.join = function(){};
+  chat.error = function(){};
 
   function stamp()
   {
@@ -60,8 +61,8 @@ function blankChat(self, type, join)
     chat.rosterHash = rollup.toString("hex");
   }
 
-  chat.add = function(hashname){
-    if(!chat.roster[hashname]) chat.roster[hashname] = "invited";
+  chat.add = function(hashname,id){
+    chat.roster[hashname] = id||"invited";
     roster();
   }
 
@@ -96,7 +97,7 @@ function blankChat(self, type, join)
 
   // stamp and log the join message
   chat.send(chat.joined);
-  chat.roster[self.hashname] = chat.joined.js.id;
+  chat.add(self.hashname,chat.joined.js.id);
 
   return chat;
 }
@@ -111,8 +112,23 @@ function newChat(self, type, join)
 
 function joinChat(self, uri, join)
 {
-  // attempt to connect to the master
-  // fetch roster and stuff
+  var chat = new blankChat(self,type,join);
+  chat.id = uri.path.split("/")[2];
+  chat.uri = uri.href;
+  self.request({uri:chat.uri+"/roster",json:true},function(err,res,roster){
+    if(err) return chat.error(err);
+    if(!roster) return chat.error("no roster");
+    if(type == "private" && !roster[self.hashname]) return chat.error("not allowed");
+    Object.keys(roster).forEach(function(hn){chat.add(hn,roster[hn])});
+    var js = {chat:uri.href,from:chat.joined.js.id,to:roster[uri.hostname],roster:chat.rosterHash};
+    self.start("chat",{bare:true,js:js},function(err,packet,chan,cbChat){
+      if(err) return chat.error(err);
+      chan.chat = chat;
+      chan.wrap("chat");
+      chat.joined(packet.from);
+    });
+  });
+  return chat;
 }
 
 var waiting = {};
@@ -137,6 +153,44 @@ exports.install = function(self)
     if(!msg.js) msg.js = {};
     msg.js.type = "join";
     join = msg;
+  }
+
+  self.wraps["message"] = function(chan)
+  {
+    chan.chat.connected[chan.hashname] = chan;
+
+    // handle messages, set up status callbacks
+    var buf = new Buffer(0);
+    chan.callback = function(err, packet, chan, cbChat)
+    {
+      if(err)
+      {
+        if(chan.connected[packet.from.hashname] == chan) delete chan.connected[packet.from.hashname];
+        return cbChat();
+      }
+      buf = Buffer.concat([buf,packet.body]);
+      if(!packet.js.done) return cbChat();
+      var msg = self.pdecode(buf);
+      buf = new Buffer(0);
+      if(!msg) return cbChat();
+      if(msg.js.type == "join") return chan.chat.joining(packet.from, msg, cbChat);
+      chan.chat.receive(packet.from,msg);
+    }
+
+    // chunk out a message, TODO no backpressure yet
+    chan.message = function(msg)
+    {
+      var buf = self.pencode(msg.js,msg.body);
+      var js = {size:buf.length};
+      do {
+        var body = buf.slice(0,1000);
+        buf = buf.slice(1000);
+        if(!buf.length) js.done = true;
+        chan.send({js:js,body:body});
+        js = {};
+      }while(buf.length > 1000);
+    }
+    return chan;
   }
 
   self.chat = function(arg)
@@ -165,6 +219,8 @@ exports.install = function(self)
     if(packet.js.to == "invite") chat = new blankChat(self, type);
 
     if(!chat) return chan.err("unknown");
+    chan.chat = chat;
+    chan.wrap("chat");
 
     // check for updated roster
     if(packet.js.from == uri.hostname && packet.js.roster != chat.rosterHash) packet.from.request({path:"/ROSTER",json:true},function(res,roster){
@@ -179,37 +235,6 @@ exports.install = function(self)
       // send our last message
     }
 
-    // handle messages, set up status callbacks
-    var buf = new Buffer(0);
-    chan.callback = function(err, packet, chan, cbChat)
-    {
-      if(err)
-      {
-        if(chan.connected[packet.from.hashname] == chan) delete chan.connected[packet.from.hashname];
-        return cbChat();
-      }
-      buf = Buffer.concat([buf,packet.body]);
-      if(!packet.js.done) return cbChat();
-      var msg = self.pdecode(buf);
-      buf = new Buffer(0);
-      if(!msg) return cbChat();
-      if(msg.js.type == "join") return chat.joining(packet.from, msg, cbChat);
-      chat.receive(packet.from,msg);
-    }
-
-    // chunk out a message, TODO no backpressure yet
-    chan.message = function(msg)
-    {
-      var buf = self.pencode(msg.js,msg.body);
-      var js = {size:buf.length};
-      do {
-        var body = buf.slice(0,1000);
-        buf = buf.slice(1000);
-        if(!buf.length) js.done = true;
-        chan.send({js:js,body:body});
-        js = {};
-      }while(buf.length > 1000);
-    }
     
     cbChat();
   }
