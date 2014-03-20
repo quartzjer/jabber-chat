@@ -4,7 +4,9 @@
   "description": "Jabber Chat implemented in javascript (node/browserify)",
   "main": "index.js",
   "dependencies": {
-    "telehash":"0.2.x"
+    "telehash":"0.2.x",
+    "JSONStream":"0.8.x",
+    "event-stream":"3.1.x"
   },
   "scripts": {
     "browserify": "browserify test.js -o bundle.js"

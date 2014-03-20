@@ -7,7 +7,7 @@ jchat.init({id:path.resolve(id+".json"),seeds:path.resolve("seeds.json")},functi
   jchat.setJoin({js:{text:id}});
   var chat = jchat.chat(to);
   console.log(chat.uri);
-  chat.error = function(err){console.log("ERR",err)};
-  chat.joined = function(from){console.log("JOIN",from)};
-  chat.received = function(msg){console.log("MSG",msg)};
+  chat.onError = function(err){console.log("ERR",err,new Error().stack)};
+  chat.onJoin = function(from,join){console.log("JOIN",from,join)};
+  chat.onMessage = function(from,msg){console.log("MSG",from,msg)};
 });
