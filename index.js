@@ -28,13 +28,8 @@ var chatTypes = ["private","public","open","closed"];
 
 function blankChat(self, type, join)
 {
-  console.log("BLANK",type,join)
   var chat = this;
   chat.type = type;
-  chat.joined = join;
-  chat.joined.js.at = Math.floor(Date.now()/1000);
-  var secret = crypto.randomBytes(16);
-  chat.seq = 1000;
   chat.log = {};
   chat.connected = {};
   chat.roster = {};
@@ -44,6 +39,16 @@ function blankChat(self, type, join)
   chat.onMessage = function(){};
   chat.onJoin = function(){};
   chat.onError = function(){};
+
+  // internal chat id generator
+  function stamp()
+  {
+    var id = secret;
+    for(var i = 0; i < chat.seq; i++) id = crypto.createHash("md5").update(id).digest();
+    id = id.toString("hex")+","+chat.seq;
+    chat.seq--;
+    return id;
+  }
 
   chat.setID = function(uri)
   {
@@ -58,14 +63,16 @@ function blankChat(self, type, join)
     self.thtp.match(chat.base,function(req,cbRes){
       var parts = req.path.split("/");
       if(parts[3] == "roster") return cbRes({json:chat.roster});
-      if(parts[3] == "id" && chat.log[parts[4]]) return cbRes({json:chat.log[parts[4]]});
-      if(parts[3] == "id" && chat.joins[parts[4]]) return cbRes({json:chat.joins[parts[4]]});
+      if(parts[3] == "id" && chat.log[parts[4]]) return cbRes({body:chat.log[parts[4]]});
+      if(parts[3] == "id" && chat.joins[parts[4]]) return cbRes({body:chat.joins[parts[4]]});
       cbRes({status:404,body:"not found"});
     });
   }
   
   chat.sync = function()
   {
+    // we are the master
+    if(chat.hashname == self.hashname) return;
     // fetch updated roster
     self.thtp.request({hashname:chat.hashname,path:chat.base+"/roster"},function(err){
       if(err) chat.onError(err);
@@ -76,12 +83,14 @@ function blankChat(self, type, join)
         chat.add(hn,roster[hn]);
       });
       // try to connect to any we're not
+      var js = {to:chat.uri,from:chat.from,roster:chat.rosterHash};
+      if(chat.last) js.last = chat.last;
       Object.keys(roster).forEach(function(hn){
-        if(chat.connected[hn]) return;
-        var js = {chat:chat.uri,from:chat.joined.js.id,to:roster[hn],roster:chat.rosterHash};
+        if(hn == self.hashname || chat.connected[hn]) return;
         self.start(hn,"chat",{bare:true,js:js},function(err,packet,chan,cbChat){
-          console.log("CHATBACK",err,packet&&packet.js);
           if(err) return chat.onError(err);
+          chat.connected[hn] = chan;
+          if(roster[hn] != packet.js.from) chat.add(hn,packet.js.from);
           chan.chat = chat;
           chan.wrap("message");
           if(chat.joins[roster[hn]]) chat.onJoin(hn, chat.joins[roster[hn]]);
@@ -92,50 +101,40 @@ function blankChat(self, type, join)
     
   }
 
-  function stamp()
-  {
-    var id = secret;
-    for(var i = 0; i < chat.seq; i++) id = crypto.createHash("md5").update(id).digest();
-    id = id.toString("hex")+","+chat.seq;
-    chat.seq--;
-    return id;
-  }
-
   chat.add = function(hashname,id){
     chat.roster[hashname] = id||"invited";
-    if(id && !chat.joins[id]) self.thtp.request({hashname:hashname,path:chat.base+"/id/"+id}).pipe(jstream.parse()).on("error",function(){}).pipe(es.map(function(msg){
-      chat.joins[msg.id] = msg;
+    // fetch join message if needed
+    if(id && !chat.joins[id]) self.thtp.request({hashname:hashname,path:chat.base+"/id/"+id}).pipe(es.join()).pipe(es.map(function(packet){
+      var msg = self.pdecode(packet);
+      if(!msg) return;
+      chat.joins[msg.js.id] = msg;
       if(chat.connected[hashname]) chat.onJoin(hashname,msg);
     }));
+    // update roster hash
     var rollup = new Buffer(0);
     Object.keys(chat.roster).sort().forEach(function(id){
       rollup = crypto.createHash("md5").update(Buffer.concat([rollup,new Buffer(id+chat.roster[id])])).digest();
     })
-    chat.rosterHash = rollup.toString("hex");    
+    chat.rosterHash = rollup.toString("hex");
+    return chat.rosterHash;
   }
 
   chat.send = function(msg)
   {
-    msg.js.id = stamp();
-    chat.log[msg.js.id] = chat.last = msg;
+    if(!msg.js.type) msg.js.type = "chat";
+    if(!msg.js.id) msg.js.id = stamp();
+    var packet = self.pencode(msg.js,msg.body);
+
+    if(msg.js.type == "chat")
+    {
+      chat.log[msg.js.id] = packet;
+      chat.last = msg.js.id;
+    }
 
     // deliver to anyone connected
     Object.keys(chat.connected).forEach(function(to){
-      chat.connected[to].message(msg);
+      chat.connected[to].message(packet);
     });
-  }
-
-  chat.joining = function(from,join,cbJoined)
-  {
-    // check type, check allowed
-    // check if it's in the roster, add/update if not
-    // fire join(), if private check return value and error
-    if(chat.roster[packet.js.from] == "invited" && msg.js.type == "join")
-    {
-      chat.roster[packet.js.from] = msg.js.id;
-      roster();
-    }
-    cbJoined();
   }
 
   chat.token = function()
@@ -143,10 +142,13 @@ function blankChat(self, type, join)
     // return self.token(function(from){ chat.add(), open chat to them })
   }
 
-  // stamp and log the join message
-  chat.send(chat.joined);
-  chat.joins[chat.joined.js.id] = chat.joined;
-  chat.add(self.hashname,chat.joined.js.id);
+  var secret = crypto.randomBytes(16);
+  chat.seq = 1000;
+  join.js.type = "join";
+  chat.from = join.js.id = stamp();
+  join.js.at = Math.floor(Date.now()/1000);
+  chat.joins[join.js.id] = self.pencode(join.js, join.body);
+  chat.add(self.hashname,chat.from);
 
   return chat;
 }
@@ -200,7 +202,6 @@ exports.install = function(self)
     var buf = new Buffer(0);
     chan.callback = function(err, packet, chan, cbChat)
     {
-      console.log("MSG IN",err,packet&&packet.js);
       if(err)
       {
         if(chat.connected[packet.from.hashname] == chan) delete chat.connected[packet.from.hashname];
@@ -216,10 +217,8 @@ exports.install = function(self)
     }
 
     // chunk out a message, TODO no backpressure yet
-    chan.message = function(msg)
+    chan.message = function(buf)
     {
-      console.log("MSG OUT",msg.js);
-      var buf = self.pencode(msg.js,msg.body);
       var js = {size:buf.length};
       do {
         var body = buf.slice(0,1000);
@@ -245,30 +244,33 @@ exports.install = function(self)
   {
     if(err) return;
 
-    console.log("CHAT IN",packet.js);
     // ensure valid request
-    var uri = self.uriparse(packet.js.chat);
+    var uri = self.uriparse(packet.js.to);
     var type;
     if(!uri || uri.protocol != "jabber:" || !self.isHashname(uri.hostname) || !uri.path || !(type = uri.path.split("/")[1]) || chatTypes.indexOf(type) == -1) return chan.err("invalid");
 
-    // no chat yet
-    var chat = self.chats[packet.js.chat];
+    var chat = self.chats[packet.js.to];
+
     // look for any waiting tokens from them of this type
     if(!chat) chat = waiting[packet.from.hashname+type];
-    // new incoming chat, must be invited
-    if(packet.js.to == "invite") chat = new blankChat(self, type);
 
-    if(!chat) return chan.err("unknown");
-    chan.send({js:{from:"yo"}});
-    chan.chat = chat;
-    chan.wrap("message");
+    // new incoming chat
+    if(!chat) chat = new blankChat(self, type);
+
+    // new/waiting ones need id set
+    if(!chat.id) chat.setID(packet.js.to);
+
+    // add them in
+    chat.add(packet.from.hashname, packet.js.from);
 
     // check for updated roster
-    if(packet.js.from == uri.hostname && packet.js.roster != chat.rosterHash) chat.sync();
+    if(packet.js.roster != chat.rosterHash) chat.sync();
 
-    // send our last message
-    chan.message(chat.last);
-    
+    var js = {from:chat.from,roster:chat.rosterHash};
+    if(chat.last) js.last = chat.last;
+    chan.send({js:js});
+    chan.chat = chat;
+    chan.wrap("message");
     cbChat();
   }
 
