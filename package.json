@@ -8,8 +8,11 @@
     "JSONStream":"0.8.x",
     "event-stream":"3.1.x"
   },
+  "devDependencies": {
+    "jquery-browserify":"*"    
+  },
   "scripts": {
-    "browserify": "browserify test.js -o bundle.js"
+    "browserify": "browserify test_browser.js -o test_chat.js"
   },
   "keywords": [
     "jabber",

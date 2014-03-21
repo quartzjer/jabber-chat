@@ -36,7 +36,7 @@ function blankChat(self, type, join)
   chat.joins = {};
 
   // app-defined event callbacks
-  chat.onMessage = function(){};
+  chat.onChat = function(){};
   chat.onJoin = function(){};
   chat.onError = function(){};
 
@@ -136,6 +136,12 @@ function blankChat(self, type, join)
       chat.connected[to].message(packet);
     });
   }
+  
+  chat.receive = function(from,msg)
+  {
+    if(msg.js.type == "chat") chat.onChat(from,msg);
+    // TODO statuses
+  }
 
   chat.token = function()
   {
@@ -212,7 +218,7 @@ exports.install = function(self)
       var msg = self.pdecode(buf);
       buf = new Buffer(0);
       if(!msg) return cbChat();
-      chat.onMessage(packet.from.hashname,msg);
+      chat.receive(packet.from.hashname,msg);
       cbChat();
     }
 

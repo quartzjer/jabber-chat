@@ -13,11 +13,10 @@ jchat.init({id:path.resolve(id+".json"),seeds:path.resolve("seeds.json")},functi
     log("error",err,new Error().stack);
   };
   chat.onJoin = function(from,join){
-    chat.nicks[from] = join.js.text;
-    log(join.js.text,"joined");
+    chat.nicks[from] = join.js.text||"unknown";
+    log(chat.nicks[from],"joined");
   };
-  chat.onMessage = function(from,msg){
-    if(msg.js.type != "chat") return;
+  chat.onChat = function(from,msg){
     log(chat.nicks[from]+">",msg.js.text);
   };
 });

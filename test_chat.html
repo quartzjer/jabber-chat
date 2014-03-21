@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Chat</title>
+        <style type="text/css">
+        /* reset-min.css */
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+
+            /* Global */
+            html, body { height: 100%; }
+            body { font-family: sans-serif; }
+            #error { display: none; color: #d00; }
+
+            /* Chat */
+            #chat { height: 100%; }
+            #main { width: 80%; height: 100%; float: left; }
+            #messages { height: 90%; overflow-y: scroll; background-color: #eee; }
+            #message-form { height: 10%; }
+            #message-input { width: 100%; height: 100%; padding: 0 1em; border: none; outline: none; }
+            #users { width: 20%; height: 100%; float: left; background-color: #ddd; }
+            .sender { font-weight: bold; }
+            .system-message { font-style: italic; }
+
+        </style>
+        <script src="test_chat.js"></script>
+    </head>
+
+    <body>
+
+      <div id="error">something went wrong</div>
+
+        <div id="chat">
+            <div id="main">
+                <ul id="messages"></ul>
+                <form id="message-form">
+                    <input id="message-input" />
+                </form>
+            </div>
+            <ul id="users"></ul>
+        </div>
+
+        <script id="userTemplate" type="text/x-jquery-tmpl">
+            <li id="user-${user}">${user}</li>
+        </script>
+
+        <script id="chatMessageTemplate" type="text/x-jquery-tmpl">
+            <li><span class="sender">${sender}</span>: ${message}</li>
+        </script>
+
+        <script id="systemMessageTemplate" type="text/x-jquery-tmpl">
+            <li class="system-message">${message}</li>
+        </script>
+
+    </body>
+</html>
