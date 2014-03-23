@@ -6692,6 +6692,7 @@ function blankChat(self, type, join)
     self.chats[chat.uri] = chat;
     self.thtp.match(chat.base,function(req,cbRes){
       var parts = req.path.split("/");
+      console.log("THTP",parts);
       if(parts[3] == "roster") return cbRes({json:chat.roster});
       if(parts[3] == "id" && chat.log[parts[4]]) return cbRes({body:chat.log[parts[4]]});
       if(parts[3] == "id" && chat.joins[parts[4]]) return cbRes({body:chat.joins[parts[4]]});
@@ -6912,7 +6913,7 @@ exports.install = function(self)
 
 }
 }).call(this,require("buffer").Buffer)
-},{"JSONStream":63,"buffer":1,"crypto":5,"event-stream":66,"telehash":35}],33:[function(require,module,exports){
+},{"JSONStream":64,"buffer":1,"crypto":5,"event-stream":67,"telehash":35}],33:[function(require,module,exports){
 (function(a){var r=a.fn.domManip,d="_tmplitem",q=/^[^<]*(<[\w\W]+>)[^>]*$|\{\{\! /,b={},f={},e,p={key:0,data:{}},h=0,c=0,l=[];function g(e,d,g,i){var c={data:i||(d?d.data:{}),_wrap:d?d._wrap:null,tmpl:null,parent:d||null,nodes:[],calls:u,nest:w,wrap:x,html:v,update:t};e&&a.extend(c,e,{nodes:[],parent:d});if(g){c.tmpl=g;c._ctnt=c._ctnt||c.tmpl(a,c);c.key=++h;(l.length?f:b)[h]=c}return c}a.each({appendTo:"append",prependTo:"prepend",insertBefore:"before",insertAfter:"after",replaceAll:"replaceWith"},function(f,d){a.fn[f]=function(n){var g=[],i=a(n),k,h,m,l,j=this.length===1&&this[0].parentNode;e=b||{};if(j&&j.nodeType===11&&j.childNodes.length===1&&i.length===1){i[d](this[0]);g=this}else{for(h=0,m=i.length;h<m;h++){c=h;k=(h>0?this.clone(true):this).get();a.fn[d].apply(a(i[h]),k);g=g.concat(k)}c=0;g=this.pushStack(g,f,i.selector)}l=e;e=null;a.tmpl.complete(l);return g}});a.fn.extend({tmpl:function(d,c,b){return a.tmpl(this[0],d,c,b)},tmplItem:function(){return a.tmplItem(this[0])},template:function(b){return a.template(b,this[0])},domManip:function(d,l,j){if(d[0]&&d[0].nodeType){var f=a.makeArray(arguments),g=d.length,i=0,h;while(i<g&&!(h=a.data(d[i++],"tmplItem")));if(g>1)f[0]=[a.makeArray(d)];if(h&&c)f[2]=function(b){a.tmpl.afterManip(this,b,j)};r.apply(this,f)}else r.apply(this,arguments);c=0;!e&&a.tmpl.complete(b);return this}});a.extend({tmpl:function(d,h,e,c){var j,k=!c;if(k){c=p;d=a.template[d]||a.template(null,d);f={}}else if(!d){d=c.tmpl;b[c.key]=c;c.nodes=[];c.wrapped&&n(c,c.wrapped);return a(i(c,null,c.tmpl(a,c)))}if(!d)return[];if(typeof h==="function")h=h.call(c||{});e&&e.wrapped&&n(e,e.wrapped);j=a.isArray(h)?a.map(h,function(a){return a?g(e,c,d,a):null}):[g(e,c,d,h)];return k?a(i(c,null,j)):j},tmplItem:function(b){var c;if(b instanceof a)b=b[0];while(b&&b.nodeType===1&&!(c=a.data(b,"tmplItem"))&&(b=b.parentNode));return c||p},template:function(c,b){if(b){if(typeof b==="string")b=o(b);else if(b instanceof a)b=b[0]||{};if(b.nodeType)b=a.data(b,"tmpl")||a.data(b,"tmpl",o(b.innerHTML));return typeof c==="string"?(a.template[c]=b):b}return c?typeof c!=="string"?a.template(null,c):a.template[c]||a.template(null,q.test(c)?c:a(c)):null},encode:function(a){return(""+a).split("<").join("&lt;").split(">").join("&gt;").split('"').join("&#34;").split("'").join("&#39;")}});a.extend(a.tmpl,{tag:{tmpl:{_default:{$2:"null"},open:"if($notnull_1){_=_.concat($item.nest($1,$2));}"},wrap:{_default:{$2:"null"},open:"$item.calls(_,$1,$2);_=[];",close:"call=$item.calls();_=call._.concat($item.wrap(call,_));"},each:{_default:{$2:"$index, $value"},open:"if($notnull_1){$.each($1a,function($2){with(this){",close:"}});}"},"if":{open:"if(($notnull_1) && $1a){",close:"}"},"else":{_default:{$1:"true"},open:"}else if(($notnull_1) && $1a){"},html:{open:"if($notnull_1){_.push($1a);}"},"=":{_default:{$1:"$data"},open:"if($notnull_1){_.push($.encode($1a));}"},"!":{open:""}},complete:function(){b={}},afterManip:function(f,b,d){var e=b.nodeType===11?a.makeArray(b.childNodes):b.nodeType===1?[b]:[];d.call(f,b);m(e);c++}});function i(e,g,f){var b,c=f?a.map(f,function(a){return typeof a==="string"?e.key?a.replace(/(<\w+)(?=[\s>])(?![^>]*_tmplitem)([^>]*)/g,"$1 "+d+'="'+e.key+'" $2'):a:i(a,e,a._ctnt)}):e;if(g)return c;c=c.join("");c.replace(/^\s*([^<\s][^<]*)?(<[\w\W]+>)([^>]*[^>\s])?\s*$/,function(f,c,e,d){b=a(e).get();m(b);if(c)b=j(c).concat(b);if(d)b=b.concat(j(d))});return b?b:j(c)}function j(c){var b=document.createElement("div");b.innerHTML=c;return a.makeArray(b.childNodes)}function o(b){return new Function("jQuery","$item","var $=jQuery,call,_=[],$data=$item.data;with($data){_.push('"+a.trim(b).replace(/([\\'])/g,"\\$1").replace(/[\r\t\n]/g," ").replace(/\$\{([^\}]*)\}/g,"{{= $1}}").replace(/\{\{(\/?)(\w+|.)(?:\(((?:[^\}]|\}(?!\}))*?)?\))?(?:\s+(.*?)?)?(\(((?:[^\}]|\}(?!\}))*?)\))?\s*\}\}/g,function(m,l,j,d,b,c,e){var i=a.tmpl.tag[j],h,f,g;if(!i)throw"Template command not found: "+j;h=i._default||[];if(c&&!/\w$/.test(b)){b+=c;c=""}if(b){b=k(b);e=e?","+k(e)+")":c?")":"";f=c?b.indexOf(".")>-1?b+c:"("+b+").call($item"+e:b;g=c?f:"(typeof("+b+")==='function'?("+b+").call($item):("+b+"))"}else g=f=h.$1||"null";d=k(d);return"');"+i[l?"close":"open"].split("$notnull_1").join(b?"typeof("+b+")!=='undefined' && ("+b+")!=null":"true").split("$1a").join(g).split("$1").join(f).split("$2").join(d?d.replace(/\s*([^\(]+)\s*(\((.*?)\))?/g,function(d,c,b,a){a=a?","+a+")":b?")":"";return a?"("+c+").call($item"+a:d}):h.$2||"")+"_.push('"})+"');}return _;")}function n(c,b){c._wrap=i(c,true,a.isArray(b)?b:[q.test(b)?b:a(b).html()]).join("")}function k(a){return a?a.replace(/\\'/g,"'").replace(/\\\\/g,"\\"):null}function s(b){var a=document.createElement("div");a.appendChild(b.cloneNode(true));return a.innerHTML}function m(o){var n="_"+c,k,j,l={},e,p,i;for(e=0,p=o.length;e<p;e++){if((k=o[e]).nodeType!==1)continue;j=k.getElementsByTagName("*");for(i=j.length-1;i>=0;i--)m(j[i]);m(k)}function m(j){var p,i=j,k,e,m;if(m=j.getAttribute(d)){while(i.parentNode&&(i=i.parentNode).nodeType===1&&!(p=i.getAttribute(d)));if(p!==m){i=i.parentNode?i.nodeType===11?0:i.getAttribute(d)||0:0;if(!(e=b[m])){e=f[m];e=g(e,b[i]||f[i],null,true);e.key=++h;b[h]=e}c&&o(m)}j.removeAttribute(d)}else if(c&&(e=a.data(j,"tmplItem"))){o(e.key);b[e.key]=e;i=a.data(j.parentNode,"tmplItem");i=i?i.key:0}if(e){k=e;while(k&&k.key!=i){k.nodes.push(j);k=k.parent}delete e._ctnt;delete e._wrap;a.data(j,"tmplItem",e)}function o(a){a=a+n;e=l[a]=l[a]||g(e,b[e.parent.key+n]||e.parent,null,true)}}}function u(a,d,c,b){if(!a)return l.pop();l.push({_:a,tmpl:d,item:this,data:c,options:b})}function w(d,c,b){return a.tmpl(a.template(d),c,b,this)}function x(b,d){var c=b.options||{};c.wrapped=d;return a.tmpl(a.template(b.tmpl),b.data,c,b.item)}function v(d,c){var b=this._wrap;return a.map(a(a.isArray(b)?b.join(""):b).filter(d||"*"),function(a){return c?a.innerText||a.textContent:a.outerHTML||s(a)})}function t(){var b=this.nodes;a.tmpl(null,null,null,this).insertBefore(b[0]);a(b).remove()}})(jQuery)
 },{}],34:[function(require,module,exports){
 // Uses Node, AMD or browser globals to create a module.
@@ -22532,8 +22533,8 @@ exports.switch = function()
   };
   self.send = function(path, msg, to){
     if(!msg) return warn("send called w/ no packet, dropping");
-    if(!path) return warn("send called w/ no network, dropping");
-    if(to) to.pathOut(path);
+    if(to) path = to.pathOut(path);
+    if(!path) return warn("send called w/ no valid network, dropping");
     debug("<<<<",Date(),msg.length,[path.type,path.ip,path.port,path.id].join(","),to&&to.hashname);
 
     // try to send it via a supported network
@@ -22778,9 +22779,9 @@ function addSeed(arg) {
   var seed = self.whokey(arg.parts,false,arg.keys);
   if(!seed) return warn("invalid seed info",arg);
   if(Array.isArray(arg.paths)) arg.paths.forEach(function(path){
-    seed.pathGet(path);
+    path = seed.pathGet(path);
+    path.seed = true;
   });
-  if(arg.bridge) seed.bridging = true;
   seed.isSeed = true;
   self.seeds.push(seed);
 }
@@ -23009,9 +23010,23 @@ function whois(hashname)
 
   hn.pathOut = function(path)
   {
+    if(!path) return false;
     path = hn.pathGet(path);
+    if(path.type == "relay" && path.relay.ended) return hn.pathEnd(path);
     path.lastOut = Date.now();
     if(!pathValid(hn.to) && pathValid(path)) hn.to = path;
+    return path;
+  }
+  
+  hn.pathEnd = function(path)
+  {
+    if(path.seed) return false; // never remove a seed-path
+    if(hn.to == path) hn.to = false;
+    path.gone = true;
+    var index = hn.paths.indexOf(path);
+    if(index >= 0) hn.paths.splice(index,1);
+    debug("PATH END",JSON.stringify(path.json));
+    return false;
   }
 
   // manage network information consistently, called on all validated incoming packets
@@ -23032,6 +23047,16 @@ function whois(hashname)
         hn.ip = path.ip;
         hn.port = path.port;
       }
+      
+      // cull any invalid paths of the same type
+      hn.paths.forEach(function(other){
+        if(other == path) return;
+        if(other.type != path.type) return;
+        if(!pathValid(other)) hn.pathEnd(other);
+      });
+      
+      // "local" custom paths, we must bridge for
+      if(path.type == "local") hn.bridging = true;
 
       // track overall if we trust them as local
       if(isLocalPath(path)) hn.isLocal = true;
@@ -23202,7 +23227,7 @@ function whois(hashname)
     var js = {seed:self.seed};
     js.see = self.buckets[hn.bucket].sort(function(a,b){ return a.age - b.age }).filter(function(a){ return a.seed }).map(function(seed){ return seed.address(hn) }).slice(0,8);
     // add some distant ones if none
-    if(!js.see.length) Object.keys(self.buckets).forEach(function(bucket){
+    if(js.see.length < 8) Object.keys(self.buckets).forEach(function(bucket){
       if(js.see.length >= 8) return;
       self.buckets[bucket].sort(function(a,b){ return a.age - b.age }).forEach(function(seed){
         if(js.see.length >= 8 || !seed.seed || js.see.indexOf(seed.address(hn)) != -1) return;
@@ -23210,7 +23235,7 @@ function whois(hashname)
       });
     });
 
-    if(self.bridging) js.bridges = Object.keys(self.networks).filter(function(type){return (["local","relay"].indexOf(type) >= 0)?false:true});
+    if(self.bridging || hn.bridging) js.bridges = Object.keys(self.networks).filter(function(type){return (["local","relay"].indexOf(type) >= 0)?false:true});
 
     if(hn.linked)
     {
@@ -23281,7 +23306,7 @@ function whois(hashname)
     hn.paths.forEach(function(path){
       debug("PATHLOOP",hn.paths.length,JSON.stringify(path.json));
       var js = {};
-      if(path.type != "relay") js.path = path.json;
+      if(["relay","local"].indexOf(path.type) == -1) js.path = path.json;
       // our outgoing priority of this path
       js.priority = (path.type == "relay") ? 0 : 1;
       if(paths.length > 0) js.paths = paths;
@@ -23769,7 +23794,7 @@ function relay(self, from, to, packet)
 
   // check to see if we should set the bridge flag for line packets
   var js;
-  if(self.bridging)
+  if(self.bridging || from.bridging || to.bridging)
   {
     var bp = pdecode(packet.body);
     if(bp.head.length == 0 && !to.bridged)
@@ -24049,6 +24074,7 @@ function pathMatch(path1, paths)
   var match;
   if(!Array.isArray(paths)) return match;
   paths.forEach(function(path2){
+    if(path2.type != path1.type) return;
     switch(path1.type)
     {
     case "relay":
@@ -24061,8 +24087,10 @@ function pathMatch(path1, paths)
       if(path1.http == path2.http) match = path2;
       break;
     case "local":
-    case "webrtc":
       if(path1.id == path2.id) match = path2;
+      break;
+    case "webrtc":
+      match = path2; // always matches
       break;
     }
   });
@@ -24072,13 +24100,12 @@ function pathMatch(path1, paths)
 // validate if a network path is acceptable to stop at
 function pathValid(path)
 {
-  if(!path) return false;
+  if(!path || path.gone) return false;
   if(path.type == "relay" && !path.relay.ended) return true; // active relays are always valid
   if(!path.lastIn) return false; // all else must receive to be valid
   if(Date.now() - path.lastIn < defaults.nat_timeout) return true; // received anything recently is good
   return false;
 }
-
 
 function partsMatch(parts1, parts2)
 {
@@ -24457,20 +24484,22 @@ exports.install = function(self)
   self.wraps["TS"] = function(chan){
     chan.socket = {data:"", hashname:chan.hashname, id:chan.id};
     chan.callback = function(err, packet, chan, callback){
-      // go online
-      if(chan.socket.readyState == 0)
+      chan.socket.readyState = 1;
+      if(chan.socket.onopen)
       {
-        chan.socket.readyState = 1;
-        if(chan.socket.onopen) chan.socket.onopen();
+        chan.socket.onopen();
+        delete chan.socket.onopen;
       }
       if(packet.body) chan.socket.data += packet.body;
       if(packet.js.done)
       {
         // allow ack-able onmessage handler instead
         if(chan.socket.onmessageack) chan.socket.onmessageack(chan.socket, callback);
-        else callback();
-        if(chan.socket.onmessage) chan.socket.onmessage(chan.socket);
-        chan.socket.data = "";
+        else{
+          if(chan.socket.onmessage) chan.socket.onmessage(chan.socket);
+          chan.socket.data = "";
+          callback();
+        }
       }else{
         callback();
       }
@@ -24781,80 +24810,70 @@ exports.install = function(self)
 (function (Buffer){
 var rtc = require("webrtc-peer");
 
-// initialize pch when needed
-function init(chan, to) {
-  var initiate = false;
-  if(!chan)
-  {
-    chan = to.start("webrtc", {bare:true, js:{open:true}});
-    initiate = true;
-  }
-  var pch = new rtc.peer({initiate:true, _self:"self", _peer:to.hashname});
-  pch.DEBUG = true;
-  
-  // dummy return function to cache last packet until webrtc signalling is done
-  var cached;
-  var ret = {send:function(data){cached = data}};
-
-  chan.wrap("TS"); // takes over channel callbacks, creates chan.socket
-  chan.socket.onmessage = function(data) {
-    console.log("RTC IN", data);
-    try {
-      data = JSON.parse(data.data)
-    } catch (E) {
-      return log("rtc parse error", E, data.data)
-    }
-    pch.signal(data);
-  }
-
-  pch.onsignal = function(signal) {
-    console.log("RTC OUT", signal);
-    chan.socket.send(JSON.stringify(signal));
-  }
-
-  pch.onconnection = function() {
-    console.log("RTC CONNECTED");
-    ret.send = function(data){
-      pch.send(data.toString("base64"));
-    }
-    if(cached)
-    {
-      ret.send(cached);
-      cached = false;
-    }
-  }
-
-  pch.onmessage = function(data) {
-    ret.receive(new Buffer(data, "base64"));
-  }
-
-  return ret;
-}
-
 exports.install = function(self)
 {
   if(!rtc.hasWebRTC) return false;
+  self.paths.webrtc = true;
 
-  var sockets = {};
-  self.deliver("webrtc", function(path, msg, to) {
-    if(!sockets[path.id]){
-      path.id = self.randomHEX(16); // we control the path ids
-      sockets[path.id] = init(false,to);
-      sockets[path.id].receive = function(msg){
-        self.receive(msg,path);
+  var conns = {};
+  var peers = {};
+
+  function init(initiate,chan,to)
+  {
+    chan.wrap("TS"); // takes over channel callbacks, creates chan.socket
+    peers[to] = chan;
+
+    var pch;
+    chan.socket.onopen = function()
+    {
+      pch = new rtc.peer({initiate:initiate, _self:"self", _peer:to});
+      pch.DEBUG = true;
+      pch.onsignal = function(signal) {
+        console.log("RTC OUT", signal);
+        chan.socket.send(JSON.stringify(signal));
+      }
+      pch.onconnection = function() {
+        console.log("RTC CONNECTED");
+        conns[to] = pch;
+        if(chan.cached) pch.send(chan.cached);
+      }
+      pch.onmessage = function(safe) {
+        self.receive(new Buffer(safe, "base64"),{type:"webrtc"});
       }
     }
-    sockets[path.id].send(msg);
+    chan.socket.onmessage = function(data) {
+      console.log("RTC IN", data);
+      try {
+        data = JSON.parse(data.data)
+      } catch (E) {
+        return console.log("rtc parse error", E, data.data)
+      }
+      pch.signal(data);
+    }
+  }
+  
+  self.deliver("webrtc", function(path, msg, to) {
+    var safe = msg.toString("base64");
+    // have a conn already
+    if(conns[to.hashname]) return conns[to.hashname].send(safe);
+    // if signalling, just cache the most recent
+    if(peers[to.hashname]) return peers[to.hashname].cached = safe;
+    // start a new signal path
+    var chan = to.start("webrtc", {bare:true});
+    // it may be possible for chan send to immediately recurse back here before peers[to] is set, hack around it
+    setTimeout(function(){ chan.send({type:"webrtc",js:{open:true}}); },10);
+    // initialize signalling
+    init(true,chan,to.hashname);
   });
-  self.paths.webrtc = true;
+
   self.rels["webrtc"] = function(err, packet, chan, cb) {
     cb();
+    if(err) return;
+    var from = packet.from.hashname;
+    // detect simultaneous and prefer the highest
+    if(peers[from] && chan.id < peers[from].id) return chan.fail("duplicate");
     chan.send({js:{open:true}});
-    var path = {type:"webrtc",id:self.randomHEX(16)};
-    sockets[path.id] = init(chan,packet.from);
-    sockets[path.id].receive = function(msg){
-      self.receive(msg,path);
-    }
+    init(false,chan,from);
   }
 }
 
@@ -24983,6 +25002,35 @@ PeerConnectionHandler.prototype._setupChannel = function(evt) {
 
 
 },{}],62:[function(require,module,exports){
+module.exports={
+  "f3639178fcb4a55985867fdf97a9965ac6e9dbb38ff11631c81dad36e968373d": {
+    "paths": [
+      {
+        "type": "ipv4",
+        "ip": "127.0.0.1",
+        "port": 42424
+      },
+      {
+        "type": "http",
+        "http": "http://127.0.0.1:42424"
+      }
+    ],
+    "parts": {
+      "3a": "f0d2bfc8590a7e0016ce85dbf0f8f1883fb4f3dcc4701eab12ef83f972a2b87f",
+      "2a": "0cb4f6137a745f1af2d31707550c03b99083180f6e69ec37918c220ecfa2972f",
+      "1a": "821e083c2b788c75bf4608e66a52ef2d911590f6"
+    },
+    "keys": {
+      "3a": "MC5dfSfrAVCSugX75JbgVWtvCbxPqwLDUkc9TcS/qxE=",
+      "2a": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqr12tXnpn707llkZfEcspB/D6KTcZM765+SnI5Z8JWkjc0Mrz9qZBB2YFLr2NmgCx0oLfSetmuHBNTT54sIAxQ/vxyykcMNGsSFg4WKhbsQXSrX4qChbhpIqMJkKa4mYZIb6qONA76G5/431u4+1sBRvfY0ewHChqGh0oThcaa50nT68f8ohIs1iUFm+SL8L9UL/oKN3Yg6drBYwpJi2Ex5Idyu4YQJwZ9sAQU49Pfs+LqhkHOascTmaa3+kTyTnp2iJ9wEuPg+AR3PJwxXnwYoWbH+Wr8gY6iLe0FQe8jXk6eLw9mqOhUcah8338MC83zSQcZriGVMq8qaQz0L9nwIDAQAB",
+      "1a": "z6yCAC7r5XIr6C4xdxeX7RlSmGu9Xe73L1gv8qecm4/UEZAKR5iCxA=="
+    },
+    "bridge": true
+  }
+}
+
+
+},{}],63:[function(require,module,exports){
 var tele = require("telehash");
 var jchat = require("./index.js");
 var $ = require("jquery-browserify");
@@ -24991,8 +25039,9 @@ tele.debug(function(){console.log.apply(console,arguments)});
 
 var nick = window.prompt("nickname?");
 var args = {id:"test_chat"};
-//args.seeds = require("./seeds.json");
+args.seeds = require("./seeds.json");
 $(document).ready(function() {
+  $("#userTemplate").tmpl({user: nick}).appendTo("#users");
   log("connecting");
   var self = tele.init(args, init);
   jchat.install(self);
@@ -25045,7 +25094,7 @@ function init(err, self)
       if(message.indexOf("jabber:") == 0)
       {
         log("joining",message);
-        chat = jchat.chat(message);
+        chat = self.chat(message);
         chatUp();
         return;
       }
@@ -25055,7 +25104,7 @@ function init(err, self)
   });
 }
 
-},{"./index.js":32,"./jquery.tmpl.min.js":33,"jquery-browserify":34,"telehash":35}],63:[function(require,module,exports){
+},{"./index.js":32,"./jquery.tmpl.min.js":33,"./seeds.json":62,"jquery-browserify":34,"telehash":35}],64:[function(require,module,exports){
 (function (process,Buffer){
 var Parser = require('jsonparse')
   , Stream = require('stream').Stream
@@ -25246,7 +25295,7 @@ exports.stringifyObject = function (op, sep, cl, indent) {
 }
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),require("buffer").Buffer)
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"buffer":1,"jsonparse":64,"stream":22,"through":65}],64:[function(require,module,exports){
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"buffer":1,"jsonparse":65,"stream":22,"through":66}],65:[function(require,module,exports){
 (function (Buffer){
 /*global Buffer*/
 // Named constants with unique integer values
@@ -25651,7 +25700,7 @@ proto.onToken = function (token, value) {
 module.exports = Parser;
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":1}],65:[function(require,module,exports){
+},{"buffer":1}],66:[function(require,module,exports){
 (function (process){
 var Stream = require('stream')
 
@@ -25758,7 +25807,7 @@ function through (write, end) {
 
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],66:[function(require,module,exports){
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],67:[function(require,module,exports){
 (function (process){
 //filter will reemit the data if cb(err,pass) pass is truthy
 
@@ -26064,7 +26113,7 @@ es.pipeable = function () {
 }
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"buffer":1,"duplexer":67,"from":68,"map-stream":69,"pause-stream":70,"split":71,"stream":22,"stream-combiner":72,"through":73}],67:[function(require,module,exports){
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"buffer":1,"duplexer":68,"from":69,"map-stream":70,"pause-stream":71,"split":72,"stream":22,"stream-combiner":73,"through":74}],68:[function(require,module,exports){
 var Stream = require("stream")
 var writeMethods = ["write", "end", "destroy"]
 var readMethods = ["resume", "pause"]
@@ -26153,7 +26202,7 @@ function duplex(writer, reader) {
     }
 }
 
-},{"stream":22}],68:[function(require,module,exports){
+},{"stream":22}],69:[function(require,module,exports){
 (function (process){
 
 'use strict';
@@ -26225,7 +26274,7 @@ function from (source) {
 }
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],69:[function(require,module,exports){
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],70:[function(require,module,exports){
 (function (process){
 //filter will reemit the data if cb(err,pass) pass is truthy
 
@@ -26374,12 +26423,12 @@ module.exports = function (mapper, opts) {
 
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],70:[function(require,module,exports){
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}],71:[function(require,module,exports){
 //through@2 handles this by default!
 module.exports = require('through')
 
 
-},{"through":73}],71:[function(require,module,exports){
+},{"through":74}],72:[function(require,module,exports){
 //filter will reemit the data if cb(err,pass) pass is truthy
 
 // reduce is more tricky
@@ -26440,7 +26489,7 @@ function split (matcher, mapper) {
 }
 
 
-},{"string_decoder":28,"through":73}],72:[function(require,module,exports){
+},{"string_decoder":28,"through":74}],73:[function(require,module,exports){
 var duplexer = require('duplexer')
 
 module.exports = function () {
@@ -26481,7 +26530,7 @@ module.exports = function () {
 }
 
 
-},{"duplexer":67}],73:[function(require,module,exports){
+},{"duplexer":68}],74:[function(require,module,exports){
 (function (process){
 var Stream = require('stream')
 
@@ -26593,4 +26642,4 @@ function through (write, end, opts) {
 
 
 }).call(this,require("/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}]},{},[62])
+},{"/Users/jer/.nvm/v0.10.23/lib/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":16,"stream":22}]},{},[63])

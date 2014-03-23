@@ -6,8 +6,9 @@ tele.debug(function(){console.log.apply(console,arguments)});
 
 var nick = window.prompt("nickname?");
 var args = {id:"test_chat"};
-//args.seeds = require("./seeds.json");
+args.seeds = require("./seeds.json");
 $(document).ready(function() {
+  $("#userTemplate").tmpl({user: nick}).appendTo("#users");
   log("connecting");
   var self = tele.init(args, init);
   jchat.install(self);
@@ -60,7 +61,7 @@ function init(err, self)
       if(message.indexOf("jabber:") == 0)
       {
         log("joining",message);
-        chat = jchat.chat(message);
+        chat = self.chat(message);
         chatUp();
         return;
       }
