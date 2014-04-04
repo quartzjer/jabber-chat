@@ -1,7 +1,7 @@
 var crypto = require("crypto");
 var jstream = require("JSONStream");
 var es = require("event-stream");
-var mmh = require("murmurhash3");
+var mmh = require("./murmurhash3");
 exports.telehash = require("telehash");
 
 exports.init = function(args, cb)
@@ -18,7 +18,9 @@ exports.init = function(args, cb)
 // mmh lib is dumb
 function mhash(buf)
 {
-  return new Buffer(mmh.murmur32HexSync(buf.toString("binary")),"hex");
+  var hash = mmh.hashBytes(buf.toString("binary"),buf.length);
+  if(hash < 0) hash = 0xFFFFFFFF + hash + 1;
+  return new Buffer(hash.toString(16),"hex");
 }
 
 exports.install = function(self)
