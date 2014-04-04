@@ -1,25 +1,30 @@
 var path = require("path");
 var jchat = require("./index.js");
+//jchat.telehash.debug(console.log);
 var id = process.argv[2]||process.exit(1);
 var to = process.argv[3]||process.exit(1);
 var chat;
-//jchat.init({id:path.resolve(id+".json"),seeds:path.resolve("seeds.json")},function(err){
-jchat.init({id:path.resolve(id+".json")},function(err){
+jchat.init({id:path.resolve(id+".json"),seeds:path.resolve("seeds.json")},function(err){
+//jchat.init({id:path.resolve(id+".json")},function(err){
   if(err) return console.log(err);
-  jchat.setJoin({js:{text:id}});
-  chat = jchat.chat(to);
-  log(chat.uri);
-  chat.nicks = {};
-  chat.onError = function(err){
-    log("error",err,new Error().stack);
-  };
-  chat.onJoin = function(from,join){
-    chat.nicks[from] = join.js.text||"unknown";
-    log(chat.nicks[from],"joined");
-  };
-  chat.onChat = function(from,msg){
-    log(chat.nicks[from]+">",msg.js.text);
-  };
+  jchat.chat(to,function(err,c){
+    if(err) return log("failed",err);
+    chat = c;
+    log(chat.id);
+    chat.add("*","invited");
+    chat.join({js:{text:id}});
+    chat.nicks = {};
+    chat.onError = function(err){
+      log("error",err,new Error().stack);
+    };
+    chat.onJoin = function(from,join){
+      chat.nicks[from] = join.js.text||"unknown";
+      log(chat.nicks[from],"joined");
+    };
+    chat.onMessage = function(from,msg){
+      log(chat.nicks[from]+">",msg.js.text);
+    };
+  });
 });
 
 rl = require("readline").createInterface(process.stdin, process.stdout, null);
@@ -49,7 +54,6 @@ rl.on('line', function(line) {
       list.push(chat.nicks[hn]);
     });
     if(list.length) log("online:",list.join(", "));
-    return;
   }
   else chat.send({js:{text:line}});
   rl.prompt();

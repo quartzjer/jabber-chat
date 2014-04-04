@@ -1,12 +1,13 @@
 {
   "name": "jabber-chat",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Jabber Chat implemented in javascript (node/browserify)",
   "main": "index.js",
   "dependencies": {
     "telehash":"0.2.x",
     "JSONStream":"0.8.x",
-    "event-stream":"3.1.x"
+    "event-stream":"3.1.x",
+    "murmurhash3":"0.2.x"
   },
   "devDependencies": {
     "jquery-browserify":"*"    
