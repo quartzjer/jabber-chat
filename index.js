@@ -4,6 +4,8 @@ var es = require("event-stream");
 var mmh = require("./murmurhash3");
 exports.telehash = require("telehash");
 
+var log = console.log;
+
 exports.init = function(args, cb)
 {
   var self = exports.telehash.init(args, cb);
@@ -15,12 +17,14 @@ exports.init = function(args, cb)
   return self;
 }
 
-// mmh lib is dumb
+// mmh lib is buffer dumb
 function mhash(buf)
 {
   var hash = mmh.hashBytes(buf.toString("binary"),buf.length);
   if(hash < 0) hash = 0xFFFFFFFF + hash + 1;
-  return new Buffer(hash.toString(16),"hex");
+  var hex = hash.toString(16);
+  while (hex.length < 8) hex = "0" + hex;
+  return new Buffer(hex,"hex");
 }
 
 exports.install = function(self)
@@ -82,8 +86,10 @@ exports.install = function(self)
       // fetch updated roster
       self.thtp.request({hashname:chat.originator,path:chat.base+"roster"},function(err){
         if(err) error(err);
-      }).pipe(jstream.parse()).on("error",function(){}).pipe(es.map(function(roster){
-//        console.log("ROSTER",roster);
+      }).pipe(jstream.parse()).on("error",function(){
+        error("invalid roster");
+      }).pipe(es.map(function(roster){
+        log("ROSTER",roster);
 
         // refresh roster first
         Object.keys(roster).forEach(function(hn){
@@ -99,13 +105,14 @@ exports.install = function(self)
         if(chat.last) js.last = chat.last;
         Object.keys(roster).forEach(function(hn){
           if(hn == "*") return;
-          if(hn == self.hashname || chat.connected[hn] || chat.connecting[hn]) return;
-//          console.log("CHAT OUT",js);
+          if(hn == self.hashname || chat.connecting[hn]) return;
+          if(chat.connected[hn] && chat.connected[hn].joined == chat.joined) return;
+          log("CHAT OUT",js);
           chat.connecting[hn] = true;
           self.start(hn,"chat",{bare:true,js:js},function(err,packet,chan,cbChat){
             delete chat.connecting[hn];
             if(err) return error(err);
-//            console.log("CHAT IN",packet.js);
+            log("CHAT IN",packet.js);
             chat.connect(chan,packet.js.from);
             cbChat();
           });
@@ -114,20 +121,11 @@ exports.install = function(self)
     
     }
   
-    chat.connect = function(chan,joinid,reply)
+    chat.connect = function(chan,joinid)
     {
       chat.connected[chan.hashname] = chan;
       chat.add(chan.hashname,joinid);
-
-      // waiting for answer yet
-      if(reply)
-      {
-        var js = {from:chat.from,roster:chat.rosterHash};
-        if(chat.last) js.last = chat.last;
-//        console.log("CHAT IN OUT",js);
-        chan.send({js:js});
-      }
-
+      chan.joined = chat.joined;
       chan.chat = chat;
       chan.wrap("message");
       return chan;
@@ -201,18 +199,13 @@ exports.install = function(self)
         chat.joins[self.hashname] = join;
         chat.add(self.hashname,chat.from);
         chat.onJoin(self.hashname,join);
-        if(chat.invited)
-        {
-          chat.connect(chat.invited,chan.cfrom);
-          delete chat.invited;
-        }
       }
       chat.sync();
     }
 
     function setJoin(hashname,join)
     {
-//      console.log("SETJOIN",hashname,join.js);
+      log("SETJOIN",hashname,join.js);
       chat.joins[hashname] = join;
       if(join.js.id) chat.log[join.js.id] = join;
       // only ready when all roster entries have a join
@@ -260,7 +253,7 @@ exports.install = function(self)
         if(chat.connected[packet.from.hashname] == chan) delete chat.connected[packet.from.hashname];
         return cbChat();
       }
-//      console.log("CHAT MSG IN",packet.js,packet.body.toString("utf8"))
+      log("CHAT MSG IN",packet.js,packet.body.toString("utf8"))
       buf = Buffer.concat([buf,packet.body]);
       if(!packet.js.done) return cbChat();
       var msg = self.pdecode(buf);
@@ -277,7 +270,7 @@ exports.install = function(self)
         var body = buf.slice(0,1000);
         buf = buf.slice(1000);
         var js = (!buf.length)?{done:true}:{};
-//        console.log("CHAT MSG OUT",js,body.toString("utf8"))
+        log("CHAT MSG OUT",js,body.toString("utf8"))
         chan.send({js:js,body:body});
       }while(buf.length > 1000);
     }
@@ -295,29 +288,35 @@ exports.install = function(self)
 
     var chat = self.chats[packet.js.to];
 
-//    console.log("CHAT REQUEST",packet.js,chat&&chat.id);
-
-    // auto-accept incoming existing
-    if(chat)
+    log("CHAT REQUEST",packet.js,chat&&chat.id);
+    
+    // new invited-to chat from originator
+    if(!chat)
     {
-      var state = chat.roster[packet.from.hashname];
-      if(!state) state = chat.roster["*"];
-      if(!(state == "invited" || state == packet.js.from)) return chan.err("denied");
-      // add in
-      chat.connect(chan,packet.js.from,true);
-      // check for updated roster
-      if(packet.js.roster != chat.rosterHash) chat.sync();
-      return;
+      if(!packet.js.from || parts[1] != packet.from.hashname) return chan.err("invalid");
+      chat = self.chat(packet.js.to,function(err,chat){
+        if(err) return chan.err("failed");
+        self.onInvite(chat);
+      });
     }
 
-    // new invited-to chat from originator
-    if(!packet.js.from || parts[1] != packet.from.hashname) return chan.err("invalid");
-    self.chat(packet.js.to,function(err,chat){
-      if(err) return chan.err("failed");
-      chat.invited = chan;
-      chan.cfrom = packet.js.from;
-      self.onInvite(chat);
-    });
+    // make sure allowed
+    var state = chat.roster[packet.from.hashname];
+    if(!state) state = chat.roster["*"];
+    if(chat.originator == packet.from.hashname) state = packet.js.from;
+    if(!(state == "invited" || state == packet.js.from)) return chan.err("denied");
+
+    // add in
+    chat.connect(chan,packet.js.from);
+
+    // check for updated roster
+    if(packet.js.roster != chat.rosterHash) chat.sync();
+
+    // reply
+    var js = {from:chat.from,roster:chat.rosterHash};
+    if(chat.last) js.last = chat.last;
+    log("CHAT IN OUT",js);
+    chan.send({js:js});
   }
 
 }
